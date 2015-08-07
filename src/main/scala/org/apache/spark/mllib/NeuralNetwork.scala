@@ -9,7 +9,7 @@ import breeze.stats.distributions.{Gaussian, Uniform}
 import org.apache.spark.mllib.linalg.distributed.{BlockMatrix, GridPartitioner, IndexedRow, IndexedRowMatrix}
 import org.apache.spark.mllib.linalg.{DenseMatrix, Matrices, Vectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashSet}
@@ -218,7 +218,6 @@ object NeuralNetwork {
     val sc = new SparkContext(conf)
     val vectorLen = 28 * 28
     // when initializing the weight matrix, the elements should be close to zero
-    val dis = new Gaussian(0, 0.2)
     val rnd = new Random()
     var hiddenWeight = DenseMatrix.randn(vectorLen, layerNum, rnd)
     var outputWeight = DenseMatrix.randn(layerNum, 10, rnd)
@@ -231,7 +230,8 @@ object NeuralNetwork {
     println(s"numBlocks of original input data: ${oriData.numRowBlocks}")
     println(s"count of the label data: ${oriLabels.count()}")
     val rowsPerBlock = math.ceil(dataSize.toDouble / totalBlks.toDouble).toInt
-    val partitioner = GridPartitioner(dataSize.toInt, vectorLen, totalBlks)
+//    val partitioner = GridPartitioner(dataSize.toInt, vectorLen, totalBlks)
+    val partitioner = new HashPartitioner(totalBlks)
     val data = new BlockMatrix(oriData.blocks.partitionBy(partitioner), rowsPerBlock ,vectorLen, dataSize, vectorLen)
 //    val data = new BlockMatrix(oriData.blocks, rowsPerBlock ,vectorLen, dataSize, vectorLen)
     data.cache()
